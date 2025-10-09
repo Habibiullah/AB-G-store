@@ -9,6 +9,7 @@
 
 ---
 
+
 ## ⚙️ Ports Overview
 | Service | Port | Description |
 |----------|------|-------------|
@@ -54,6 +55,7 @@ Ensure MongoDB is running on your system (default port `27017`).
 ```env
 MONGO_URI=mongodb://127.0.0.1:27017/hrms
 ```
+
 
 ### Option B: MongoDB via Docker
 ```bash
