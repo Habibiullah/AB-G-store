@@ -1,0 +1,26 @@
+{
+  "name": "hrms-mern",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "services/*",
+    "services/shared"
+  ],
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "scripts": {
+    "dev": "concurrently -c blue,magenta,green,cyan,yellow,red,white \"npm:dev:frontend\" \"npm:dev:gateway\" \"npm:dev:auth\" \"npm:dev:employees\" \"npm:dev:attendance\" \"npm:dev:payroll\"",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:gateway": "npm --workspace services/gateway run dev",
+    "dev:auth": "npm --workspace services/auth run dev",
+    "dev:employees": "npm --workspace services/employees run dev",
+    "dev:attendance": "npm --workspace services/attendance run dev",
+    "dev:payroll": "npm --workspace services/payroll run dev",
+    "build": "npm -w frontend run build && npm -w services/shared run build && npm -w services/gateway run build && npm -w services/auth run build && npm -w services/employees run build && npm -w services/attendance run build && npm -w services/payroll run build",
+    "start": "npm -w services/gateway run start & npm -w services/auth run start & npm -w services/employees run start & npm -w services/attendance run start & npm -w services/payroll run start & npm -w frontend run preview"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
