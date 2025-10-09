@@ -1,2 +1,4 @@
-import axios from 'axios'
-export const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080' })
+import axios from "axios";
+import { API_BASE_URL } from "./env";
+
+export const api = axios.create({ baseURL: API_BASE_URL });

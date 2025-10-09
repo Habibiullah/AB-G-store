@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/components/DataCard.tsx","./src/components/Navbar.tsx","./src/lib/api.ts","./src/lib/env.ts","./src/lib/queryClient.ts","./src/pages/Attendance.tsx","./src/pages/Dashboard.tsx","./src/pages/Employees.tsx","./src/pages/Payroll.tsx"],"version":"5.9.3"}

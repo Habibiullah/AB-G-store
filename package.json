@@ -21,6 +21,9 @@
     "start": "npm -w services/gateway run start & npm -w services/auth run start & npm -w services/employees run start & npm -w services/attendance run start & npm -w services/payroll run start & npm -w frontend run preview"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/morgan": "^1.9.10",
     "concurrently": "^9.0.0"
   }
 }

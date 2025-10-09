@@ -2,8 +2,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import "dotenv/config";
-import { connectMongo } from "@hrms/shared/src/mongo.js";
-import { env } from "@hrms/shared/src/env.js";
+import { connectMongo, env } from "@hrms/shared";
 import routes from "./routes.js";
 
 const app = express();
