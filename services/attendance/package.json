@@ -8,11 +8,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@hrms/shared": "0.1.0",
+    "@hrms/shared": "file:./hrms-shared-0.1.0.tgz"
+,
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.19.2",
-    "mongoose": "^8.7.0",
+    "mongoose": "^8.19.1",
     "morgan": "^1.10.0"
   },
   "devDependencies": {
