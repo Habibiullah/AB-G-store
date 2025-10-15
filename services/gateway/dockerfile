@@ -1,7 +1,24 @@
+# Use Node 20 or above (required by @hrms/shared)
 FROM node:20
+
+# Set working directory
 WORKDIR /app
+
+# Copy only package files first for efficient caching
+COPY package*.json ./
+COPY hrms-shared-0.1.0.tgz ./hrms-shared-0.1.0.tgz
 COPY . .
-RUN npm install
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy the rest of the application files
+
+
+# Build the TypeScript code
 RUN npm run build
+
+# Expose your app port
 EXPOSE 8080
+
+# Start the app
 CMD ["npm", "start"]
