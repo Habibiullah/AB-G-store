@@ -32,63 +32,7 @@ jobs:
            docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
            docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-       - name: auth build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: auth
-         run: |
-           cd ./services/auth
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-
-
-       - name: employees Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: employees
-         run: |
-           cd ./services/employess
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-       - name: attendance Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: attendance
-         run: |
-           cd ./services/attendance
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-
-
-       - name: payroll Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: payroll
-         run: |
-           cd ./services/payroll
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-
-       - name: gateway Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: gateway
-         run: |
-           cd ./services/gateway
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
 
 
