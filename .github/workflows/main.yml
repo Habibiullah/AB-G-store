@@ -99,7 +99,7 @@ jobs:
       # 2️⃣ Setup SSH key
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+          echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
           chmod 400 AB-G-key.pem
 
       # 3️⃣ SSH and Deploy
