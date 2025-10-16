@@ -81,6 +81,7 @@ jobs:
   #         docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
 
   # -------------------- DEPLOY TO EC2 --------------------
+jobs:
   deploy:
     name: Deploy on EC2
     runs-on: ubuntu-latest
@@ -92,7 +93,7 @@ jobs:
       ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
 
     steps:
-      # 1️⃣ Checkout (needed for script files if any)
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -102,7 +103,7 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
           chmod 400 AB-G-key.pem
 
-      # 3️⃣ Deploy all containers on EC2
+      # 3️⃣ SSH and Deploy
       - name: SSH and Deploy Containers
         env:
           EC2_USER: ubuntu
@@ -113,11 +114,6 @@ jobs:
           set -euo pipefail
           echo "🚀 Starting EC2 Deployment..."
 
-          # Decode SSH key and set permissions
-          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
-          chmod 400 AB-G-key.pem
-
-          # SSH into EC2 and run remote commands
           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s <<'EOF'
           set -euo pipefail
           echo "✅ Connected to EC2."
@@ -150,9 +146,7 @@ jobs:
           docker run -d --name gateway    --network appnet -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/gateway:latest"
 
           echo "✅ Deployment completed successfully!"
-        EOF
+          EOF
 
-
-
-
-     
+  
+    
