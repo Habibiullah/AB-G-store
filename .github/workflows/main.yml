@@ -96,12 +96,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup SSH key
-      - name: Setup SSH key
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
-          chmod 400 AB-G-key.pem
-
       # 3️⃣ SSH and Deploy
       - name: SSH and Deploy Containers
         env:
@@ -112,7 +106,9 @@ jobs:
         run: |
           set -euo pipefail
           echo "🚀 Starting EC2 Deployment..."
-
+          echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
+          cat AB-G-key.pem
+          chmod 400 AB-G-key.pem
           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s <<'EOF'
           set -euo pipefail
           echo "✅ Connected to EC2."
