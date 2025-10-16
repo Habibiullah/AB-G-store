@@ -100,14 +100,15 @@ jobs:
       # 2️⃣ Setup SSH key
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
-          chmod 400 AB-G-key.pem
+          # echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+          # chmod 400 AB-G-key.pem
 
       # 3️⃣ Deploy all containers on EC2
       - name: SSH and Deploy Containers
         run: |
           set -euo pipefail
-
+          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+          chmod 400 AB-G-key.pem
           echo "🚀 Starting EC2 Deployment..."
           
           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s <<'EOF'
