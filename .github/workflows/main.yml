@@ -98,9 +98,8 @@ jobs:
 
     - name: SSH and Deploy Containers
       run: |
-        set -euo pipefail
-        echo "🚀 Starting EC2 Deployment..."
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@13.229.231.109 bash -s <<'EOF'
+        
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} <<'EOF'
         set -euo pipefail
         echo "✅ Connected to EC2."
 
