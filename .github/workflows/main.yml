@@ -83,63 +83,99 @@ jobs:
   # -------------------- DEPLOY TO EC2 --------------------
 
 
-
   deploy:
-    name: Deploy on EC2
     runs-on: ubuntu-latest
+    env:
+      # Adjust as you wish; these are used on the REMOTE host via heredoc
+      AWS_REGION: ap-southeast-1
+      AWS_ACCOUNT_ID: 851725361780
 
     steps:
-      - name: Checkout (optional)
-        uses: actions/checkout@v4
-
-      - name: Prepare SSH key
+      - name: Deploy via single SSH session
+        shell: bash
         run: |
+          set -Eeuo pipefail
+
+          # --- Prepare SSH (in this same step) ---
           mkdir -p ~/.ssh
-          # Write the key EXACTLY as stored in the secret and strip CRLF just in case
-          printf '%s' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          # Preload host key to avoid interactive prompt
+          printf '%s' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          # Strict host key checking with prefetch:
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Test SSH connectivity
-        run: |
-          ssh -o StrictHostKeyChecking=yes -i ~/.ssh/id_rsa "ubuntu@${{ secrets.EC2_HOST }}" 'echo "✅ Connected to EC2 via SSH"'
+          # --- Hardened SSH options ---
+          SSH_USER="${{ secrets.EC2_USER || 'ubuntu' }}"
+          SSH_HOST="${{ secrets.EC2_HOST }}"
+          SSH_OPTS="-o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_ci -tt"
 
-      - name: SSH and Deploy Containers
-        run: |
-          ssh -tt -o StrictHostKeyChecking=yes -i ~/.ssh/id_rsa "ubuntu@${{ secrets.EC2_HOST }}" <<'EOF'
-          set -euo pipefail
-          set -x
+          echo "🔌 Checking SSH reachability (with retries)..."
+          for i in {1..5}; do
+            if ssh $SSH_OPTS "${SSH_USER}@${SSH_HOST}" 'true' 2>/dev/null; then
+              echo "✅ SSH reachable."
+              break
+            fi
+            echo "SSH attempt $i failed; retrying in 5s..."
+            sleep 5
+            if [[ $i -eq 5 ]]; then
+              echo "❌ Could not reach EC2 via SSH after 5 attempts."
+              exit 1
+            fi
+          done
+
+          # --- Single SSH session runs EVERYTHING below ---
+          ssh $SSH_OPTS "${SSH_USER}@${SSH_HOST}" <<'REMOTE_EOF'
+          set -Eeuo pipefail
+          trap 'echo "❌ Remote deploy failed at line $LINENO"; exit 1' ERR
 
           echo "✅ Connected to EC2."
 
+          # --- Config ---
           AWS_REGION="${AWS_REGION:-ap-southeast-1}"
-          ACCOUNT_ID="${ACCOUNT_ID:-851725361780}"
+          ACCOUNT_ID="${AWS_ACCOUNT_ID:-851725361780}"
           ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          echo "🔧 Versions:"
+          command -v docker >/dev/null && docker --version || { echo "Docker missing"; exit 1; }
+          command -v aws >/dev/null && aws --version || { echo "AWS CLI missing"; exit 1; }
 
           echo "🔐 Logging into ECR..."
           aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-          echo "🧹 Cleaning old containers..."
+          echo "🧹 Removing old containers (if any)..."
           docker rm -f frontend auth employees attendance payroll gateway 2>/dev/null || true
 
-          echo "🕸️ Creating Docker network..."
+          echo "🕸️ Ensuring Docker network exists..."
           docker network create appnet 2>/dev/null || true
 
           echo "⬇️ Pulling latest images..."
           for service in frontend auth employees attendance payroll gateway; do
             echo "🔄 Pulling $ECR_REGISTRY/$service:latest ..."
-            docker pull "$ECR_REGISTRY/$service:latest"
+            # Small retry for pulls
+            for j in 1 2 3; do
+              if docker pull "$ECR_REGISTRY/$service:latest"; then
+                break
+              fi
+              echo "Pull failed for $service (attempt $j). Retrying in 3s..."
+              sleep 3
+              if [[ $j -eq 3 ]]; then
+                echo "❌ Pull failed for $service after 3 attempts."
+                exit 1
+              fi
+            done
           done
 
-          echo "🚢 Running updated containers..."
+          echo "🚢 Starting containers..."
           docker run -d --name frontend   --network appnet -p 5173:5173 --restart unless-stopped "$ECR_REGISTRY/frontend:latest"
           docker run -d --name gateway    --network appnet -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/gateway:latest"
           for service in auth employees attendance payroll; do
             docker run -d --name "$service" --network appnet --restart unless-stopped "$ECR_REGISTRY/$service:latest"
           done
 
+          echo "🧪 Health check (basic):"
+          # Optional: curl your gateway if reachable locally or via a known endpoint
+          # curl -fsS http://localhost:8000/healthz || { echo "Gateway health check failed"; exit 1; }
+
           echo "✅ Deployment completed successfully!"
-          EOF
+          REMOTE_EOF
 
     
