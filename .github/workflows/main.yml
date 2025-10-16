@@ -97,10 +97,12 @@ jobs:
 
        - name: Deploy on EC2 via SSH
          run: |
-           echo "${{ secrets.EC2_SSH_KEY }}" > AB-G-key.pem
-           chmod 400 "AB-G-key.pem"
-
-           ssh -o strictHostkeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
+           echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
+           chmod 400 AB-G-key.pem
+           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
+           echo "SSH connected successfully!"
+           # rest of your commands...
+           EOF
              cd /hoe/ubuntu/app
 
              # configure AWS CLI credentials
