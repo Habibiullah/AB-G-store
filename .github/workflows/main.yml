@@ -94,33 +94,91 @@ jobs:
            docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
  
+       - name: Deploy on EC2 via SSH (pull from ECR and run container)
+         env:
+          ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
+          ECR_IMAGE: ${{ env.ECR_REGISTRY }}/frontend:latest
+          EC2_USER: ubuntu
+          EC2_HOST: 13.229.231.109
+          AWS_REGION: ap-southeast-1
+          run: |
+            set -euo pipefail
 
-       - name: Deploy on EC2 via SSH
-         run: |
-          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
-          chmod 400 AB-G-key.pem
+            # write ssh key from base64 secret, secure it
+            echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+            chmod 400 AB-G-key.pem
 
-          ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
-          echo "✅ SSH connected successfully!"
+            # get ECR password locally and pipe into remote `docker login --password-stdin`.
+            # On the remote host the first command (docker login) will read that password from stdin.
+            aws ecr get-login-password --region "$AWS_REGION" \
+            | ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s -- "$ECR_REGISTRY" "$ECR_IMAGE" "$AWS_REGION" <<'REMOTE_SCRIPT'
+            set -euo pipefail
 
-          cd /home/ubuntu/app
+            ECR_REGISTRY="$1"
+            ECR_IMAGE="$2"
+            AWS_REGION="$3"
 
-          # Configure AWS CLI credentials
-          aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
-          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-          aws configure set default.region "ap-southeast-1"
+            # Helpful checks
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "ERROR: docker is not installed on the remote host." >&2
+              exit 2
+            fi
 
-          # Docker setup
-          docker network create appnet || true
-          docker rm -f frontend || true
+            if ! command -v aws >/dev/null 2>&1; then
+              echo "WARNING: aws cli not found on remote host — this may be okay if not needed." >&2
+              # we do not exit; docker login uses stdin and is independent of aws cli
+            fi
 
-          aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
+            # create network (ignore error if exists), remove old container if exists
+            docker network create appnet || true
+            docker rm -f frontend || true
 
-          docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+            # IMPORTANT: the ECR password is provided through stdin by the SSH client (local side).
+            # docker login will consume the piped password from stdin.
+            docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-          docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+            # pull the image (will fail if login fails or image missing)
+            docker pull "$ECR_IMAGE"
+
+            # run container (change port mapping as needed). Use restart policy so container comes back after reboot.
+            docker run -d \
+              --name frontend \
+              --network appnet \
+              --restart unless-stopped \
+              -p 5173:5173 \
+              "$ECR_IMAGE"
+
+            echo "✅ Deployed $ECR_IMAGE and started container 'frontend'."
+        REMOTE_SCRIPT
+
+
+
+      #  - name: Deploy on EC2 via SSH
+      #    run: |
+      #     echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+      #     chmod 400 AB-G-key.pem
+
+      #     ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
+      #     echo "✅ SSH connected successfully!"
+
+      #     cd /home/ubuntu/app
+
+      #     # Configure AWS CLI credentials
+      #     aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
+      #     aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+      #     aws configure set default.region "ap-southeast-1"
+
+      #     # Docker setup
+      #     docker network create appnet || true
+      #     docker rm -f frontend || true
+
+      #     aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
+
+      #     docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+
+      #     docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
         
-          EOF
+      #     EOF
        
 
 
