@@ -82,18 +82,8 @@ jobs:
 
   # -------------------- DEPLOY TO EC2 --------------------
 
-  deploy:
-    name: Deploy on EC2
-    runs-on: ubuntu-latest
-    env:
-      AWS_REGION: ap-southeast-1
-      EC2_USER: ubuntu
-      EC2_HOST: 13.229.231.109
-      ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
 
-    steps:
-
-deploy:
+ deploy:
   name: Deploy on EC2
   runs-on: ubuntu-latest
   env:
@@ -150,5 +140,4 @@ deploy:
         echo "✅ Deployment completed successfully!"
         EOF
 
-  
     
