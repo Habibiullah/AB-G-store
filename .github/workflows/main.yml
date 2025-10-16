@@ -86,27 +86,21 @@ jobs:
  deploy:
   name: Deploy on EC2
   runs-on: ubuntu-latest
-  env:
-    AWS_REGION: ap-southeast-1
-    EC2_USER: ubuntu
-    EC2_HOST: 13.229.231.109
-    ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
 
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
 
     - name: Setup SSH key
       run: |
-        printf "%s" "${{ secrets.EC2_SSH_KEY }}" > AB-G-key.pem
-        chmod 400 AB-G-key.pem
-        echo "🔑 SSH key configured"
+        mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
     - name: SSH and Deploy Containers
       run: |
         set -euo pipefail
         echo "🚀 Starting EC2 Deployment..."
-        ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 bash -s <<'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@13.229.231.109 bash -s <<'EOF'
         set -euo pipefail
         echo "✅ Connected to EC2."
 
