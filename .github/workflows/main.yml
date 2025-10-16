@@ -93,53 +93,62 @@ jobs:
 
     steps:
 
-      # 3️⃣ SSH and Deploy
-      - name: SSH and Deploy Containers
-        env:
-          EC2_USER: ubuntu
-          EC2_HOST: 13.229.231.109
-          AWS_REGION: ap-southeast-1
-          ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
-        run: |
-          set -euo pipefail
-          echo "🚀 Starting EC2 Deployment..."
-          echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
-          chmod 400 AB-G-key.pem
-          cat AB-G-key.pem
-          
-          ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s <<'EOF'
-          set -euo pipefail
-          echo "✅ Connected to EC2."
+deploy:
+  name: Deploy on EC2
+  runs-on: ubuntu-latest
+  env:
+    AWS_REGION: ap-southeast-1
+    EC2_USER: ubuntu
+    EC2_HOST: 13.229.231.109
+    ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
 
-          AWS_REGION="ap-southeast-1"
-          ECR_REGISTRY="851725361780.dkr.ecr.ap-southeast-1.amazonaws.com"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-          echo "🔐 Logging into ECR..."
-          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+    - name: Setup SSH key
+      run: |
+        printf "%s" "${{ secrets.EC2_SSH_KEY }}" > AB-G-key.pem
+        chmod 400 AB-G-key.pem
+        echo "🔑 SSH key configured"
 
-          echo "🧹 Cleaning old containers..."
-          docker stop frontend auth employees attendance payroll gateway 2>/dev/null || true
-          docker rm frontend auth employees attendance payroll gateway 2>/dev/null || true
+    - name: SSH and Deploy Containers
+      run: |
+        set -euo pipefail
+        echo "🚀 Starting EC2 Deployment..."
+        ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 bash -s <<'EOF'
+        set -euo pipefail
+        echo "✅ Connected to EC2."
 
-          echo "🕸️ Creating Docker network..."
-          docker network create appnet 2>/dev/null || true
+        AWS_REGION="ap-southeast-1"
+        ECR_REGISTRY="851725361780.dkr.ecr.ap-southeast-1.amazonaws.com"
 
-          echo "⬇️ Pulling latest images..."
-          for service in frontend auth employees attendance payroll gateway; do
-            echo "🔄 Pulling $ECR_REGISTRY/$service:latest ..."
-            docker pull "$ECR_REGISTRY/$service:latest"
-          done
+        echo "🔐 Logging into ECR..."
+        aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-          echo "🚢 Running updated containers..."
-          docker run -d --name frontend   --network appnet -p 5173:5173 --restart unless-stopped "$ECR_REGISTRY/frontend:latest"
-          docker run -d --name auth       --network appnet --restart unless-stopped "$ECR_REGISTRY/auth:latest"
-          docker run -d --name employees  --network appnet --restart unless-stopped "$ECR_REGISTRY/employees:latest"
-          docker run -d --name attendance --network appnet --restart unless-stopped "$ECR_REGISTRY/attendance:latest"
-          docker run -d --name payroll    --network appnet --restart unless-stopped "$ECR_REGISTRY/payroll:latest"
-          docker run -d --name gateway    --network appnet -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/gateway:latest"
+        echo "🧹 Cleaning old containers..."
+        docker stop frontend auth employees attendance payroll gateway 2>/dev/null || true
+        docker rm frontend auth employees attendance payroll gateway 2>/dev/null || true
 
-          echo "✅ Deployment completed successfully!"
-          EOF
+        echo "🕸️ Creating Docker network..."
+        docker network create appnet 2>/dev/null || true
+
+        echo "⬇️ Pulling latest images..."
+        for service in frontend auth employees attendance payroll gateway; do
+          echo "🔄 Pulling $ECR_REGISTRY/$service:latest ..."
+          docker pull "$ECR_REGISTRY/$service:latest"
+        done
+
+        echo "🚢 Running updated containers..."
+        docker run -d --name frontend   --network appnet -p 5173:5173 --restart unless-stopped "$ECR_REGISTRY/frontend:latest"
+        docker run -d --name auth       --network appnet --restart unless-stopped "$ECR_REGISTRY/auth:latest"
+        docker run -d --name employees  --network appnet --restart unless-stopped "$ECR_REGISTRY/employees:latest"
+        docker run -d --name attendance --network appnet --restart unless-stopped "$ECR_REGISTRY/attendance:latest"
+        docker run -d --name payroll    --network appnet --restart unless-stopped "$ECR_REGISTRY/payroll:latest"
+        docker run -d --name gateway    --network appnet -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/gateway:latest"
+
+        echo "✅ Deployment completed successfully!"
+        EOF
 
   
     
