@@ -97,37 +97,30 @@ jobs:
 
        - name: Deploy on EC2 via SSH
          run: |
-           echo "${{ secrets.EC2_SSH_KEY }}" | awk '{gsub(/\\n/,"\n")}1' > AB-G-key.pem
-           chmod 400 AB-G-key.pem
-           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
-           echo "SSH connected successfully!"
-           # rest of your commands...
-           EOF
-             cd /hoe/ubuntu/app
+          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+          chmod 400 AB-G-key.pem
 
-             # configure AWS CLI credentials
-             aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
-             aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-             aws configure set default.region "ap-southeast-1"
+          ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
+          echo "✅ SSH connected successfully!"
 
-             #login to amazon ecr
-             aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
+          cd /home/ubuntu/app
 
-             # Create Docker network (if not exists)
-             docker network inspect appnet >/dev/null 2>&1 || docker network create appnet
+          # Configure AWS CLI credentials
+          aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws configure set default.region "ap-southeast-1"
 
-             # Stop and remove old frontend container (ignore if missing)
-             docker rm -f frontend || true
+          # Docker setup
+          docker network create appnet || true
+          docker rm -f frontend || true
 
-             # Pull latest image from ECR
-             docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+          aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
 
-             # Run new frontend container
-             docker run -d --name frontend --network appnet -p 5173:5173 \
-             851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
-           EOF
-          
-           
+          docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+
+          docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+        
+          EOF
        
 
 
