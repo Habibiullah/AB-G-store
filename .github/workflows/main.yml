@@ -107,18 +107,20 @@ jobs:
            echo "${{ secrets.EC2_SSH_KEY }}" > AB-G-key.pem
            chmod 400 "AB-G-key.pem"
           
-           ssh -i "AB-G-key.pem" ubuntu@ec2-13-229-231-109.ap-southeast-1.compute.amazonaws.com
-           cd /home/ubuntu/app
+           ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@ec2-13-229-231-109 << 'EOF'
+             cd /home/ubuntu/app
           
-           docker network create appnet
+             docker network create appnet
 
-           docker rm -f frontend || true
+             docker rm -f frontend || true
 
-           aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
+           
 
-           docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+             docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
 
-           docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+             docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
+           EOF
+
 
           
            
