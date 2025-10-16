@@ -1,197 +1,142 @@
 name: frontend
+
 on:
   push:
-    branches: 
+    branches:
       - main
 
 jobs:
-   build-and-deploy:
-     runs-on: ubuntu-latest
-     steps:
-       - name: checkout code
-         uses: actions/checkout@v4
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-       - name: configure AWS credentials
-         uses: aws-actions/configure-aws-credentials@v4
-         with:
-           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-           aws-region: ${{ secrets.AWS_REGION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-       - name: Login to Amazon ECR
-         id: login-ecr
-         uses: aws-actions/amazon-ecr-login@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-       - name: Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-         run: |
-           cd frontend
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
+      # ---------- FRONTEND ----------
+      - name: Build, Tag, and Push frontend image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          cd frontend
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ---------- AUTH ----------
+      - name: Build, Tag, and Push auth image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: auth
+        run: |
+          cd ./services/auth
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ---------- EMPLOYEES ----------
+      - name: Build, Tag, and Push employees image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: employees
+        run: |
+          cd ./services/employees
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-       - name: auth build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: auth
-         run: |
-           cd ./services/auth
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      # ---------- ATTENDANCE ----------
+      - name: Build, Tag, and Push attendance image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: attendance
+        run: |
+          cd ./services/attendance
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ---------- PAYROLL ----------
+      - name: Build, Tag, and Push payroll image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: payroll
+        run: |
+          cd ./services/payroll
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+      # ---------- GATEWAY ----------
+      - name: Build, Tag, and Push gateway image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: gateway
+        run: |
+          cd ./services/gateway
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-       - name: employees Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: employees
-         run: |
-           cd ./services/employees
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-       - name: attendance Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: attendance
-         run: |
-           cd ./services/attendance
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-
-
-       - name: payroll Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: payroll
-         run: |
-           cd ./services/payroll
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-
-
-       - name: gateway Build, Tag, and Push image
-         env:
-           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
-           ECR_REPOSITORY: gateway
-         run: |
-           cd ./services/gateway
-           docker build -t $ECR_REPOSITORY .
-           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
- 
-       - name: Deploy on EC2 via SSH (pull from ECR and run container)
-         env:
+      # ---------- DEPLOYMENT ----------
+      - name: Deploy on EC2 via SSH (pull from ECR and run container)
+        env:
           ECR_REGISTRY: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
-          ECR_IMAGE: ${{ env.ECR_REGISTRY }}/frontend:latest
+          ECR_IMAGE: 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
           EC2_USER: ubuntu
           EC2_HOST: 13.229.231.109
           AWS_REGION: ap-southeast-1
-          run: |
-            set -euo pipefail
+        run: |
+          set -euo pipefail
 
-            # write ssh key from base64 secret, secure it
-            echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
-            chmod 400 AB-G-key.pem
+          # Decode SSH key from base64
+          echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
+          chmod 400 AB-G-key.pem
 
-            # get ECR password locally and pipe into remote `docker login --password-stdin`.
-            # On the remote host the first command (docker login) will read that password from stdin.
-            aws ecr get-login-password --region "$AWS_REGION" \
-            | ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s -- "$ECR_REGISTRY" "$ECR_IMAGE" "$AWS_REGION" <<'REMOTE_SCRIPT'
-            set -euo pipefail
+          # Pipe ECR password into remote docker login
+          aws ecr get-login-password --region "$AWS_REGION" | \
+          ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" "$EC2_USER@$EC2_HOST" bash -s -- "$ECR_REGISTRY" "$ECR_IMAGE" "$AWS_REGION" <<'REMOTE_SCRIPT'
+          set -euo pipefail
 
-            ECR_REGISTRY="$1"
-            ECR_IMAGE="$2"
-            AWS_REGION="$3"
+          ECR_REGISTRY="$1"
+          ECR_IMAGE="$2"
+          AWS_REGION="$3"
 
-            # Helpful checks
-            if ! command -v docker >/dev/null 2>&1; then
-              echo "ERROR: docker is not installed on the remote host." >&2
-              exit 2
-            fi
+          echo "✅ SSH connected successfully!"
 
-            if ! command -v aws >/dev/null 2>&1; then
-              echo "WARNING: aws cli not found on remote host — this may be okay if not needed." >&2
-              # we do not exit; docker login uses stdin and is independent of aws cli
-            fi
+          # Ensure docker exists
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "❌ Docker not installed on remote host." >&2
+            exit 1
+          fi
 
-            # create network (ignore error if exists), remove old container if exists
-            docker network create appnet || true
-            docker rm -f frontend || true
+          # Create network and remove old container
+          docker network create appnet || true
+          docker rm -f frontend || true
 
-            # IMPORTANT: the ECR password is provided through stdin by the SSH client (local side).
-            # docker login will consume the piped password from stdin.
-            docker login --username AWS --password-stdin "$ECR_REGISTRY"
+          # Login to ECR (password piped via SSH stdin)
+          docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
-            # pull the image (will fail if login fails or image missing)
-            docker pull "$ECR_IMAGE"
+          # Pull and run container
+          docker pull "$ECR_IMAGE"
+          docker run -d \
+            --name frontend \
+            --network appnet \
+            --restart unless-stopped \
+            -p 5173:5173 \
+            "$ECR_IMAGE"
 
-            # run container (change port mapping as needed). Use restart policy so container comes back after reboot.
-            docker run -d \
-              --name frontend \
-              --network appnet \
-              --restart unless-stopped \
-              -p 5173:5173 \
-              "$ECR_IMAGE"
-
-            echo "✅ Deployed $ECR_IMAGE and started container 'frontend'."
-        REMOTE_SCRIPT
-
-
-
-      #  - name: Deploy on EC2 via SSH
-      #    run: |
-      #     echo "${{ secrets.EC2_SSH_KEY_BASE64 }}" | base64 --decode > AB-G-key.pem
-      #     chmod 400 AB-G-key.pem
-
-      #     ssh -o StrictHostKeyChecking=no -i "AB-G-key.pem" ubuntu@13.229.231.109 << 'EOF'
-      #     echo "✅ SSH connected successfully!"
-
-      #     cd /home/ubuntu/app
-
-      #     # Configure AWS CLI credentials
-      #     aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
-      #     aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
-      #     aws configure set default.region "ap-southeast-1"
-
-      #     # Docker setup
-      #     docker network create appnet || true
-      #     docker rm -f frontend || true
-
-      #     aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com
-
-      #     docker pull 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
-
-      #     docker run -d --name frontend --network appnet -p 5173:5173 851725361780.dkr.ecr.ap-southeast-1.amazonaws.com/frontend:latest
-        
-      #     EOF
-       
-
-
-
- 
-
-
-
-
-
-
-
-
-
-         
-
+          echo "✅ Deployment successful: $ECR_IMAGE"
+REMOTE_SCRIPT
