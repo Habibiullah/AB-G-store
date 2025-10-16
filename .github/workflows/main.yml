@@ -83,7 +83,8 @@ jobs:
   # -------------------- DEPLOY TO EC2 --------------------
 
 
-deploy:
+
+  deploy:
     name: Deploy on EC2
     runs-on: ubuntu-latest
 
