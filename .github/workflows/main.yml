@@ -8,7 +8,6 @@ permissions:
   contents: read
   id-token: write
 
-jobs:
   # -------------------- BUILD & PUSH IMAGES --------------------
   # build-and-push:
   #   name: Build and Push Docker Images to ECR
