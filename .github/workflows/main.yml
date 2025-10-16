@@ -8,6 +8,7 @@ permissions:
   contents: read
   id-token: write
 
+jobs:
   # -------------------- BUILD & PUSH IMAGES --------------------
   # build-and-push:
   #   name: Build and Push Docker Images to ECR
@@ -80,11 +81,10 @@ permissions:
   #         docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
 
   # -------------------- DEPLOY TO EC2 --------------------
-jobs:
+
   deploy:
     name: Deploy on EC2
     runs-on: ubuntu-latest
-    needs: build-and-push
     env:
       AWS_REGION: ap-southeast-1
       EC2_USER: ubuntu
