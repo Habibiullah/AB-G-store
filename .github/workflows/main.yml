@@ -277,7 +277,7 @@ jobs:
             sudo docker restart auth
 
             sudo docker image prune -af
-            EOF
+          
 
 
 
@@ -308,7 +308,7 @@ jobs:
             sudo docker restart employees
 
             sudo docker image prune -af
-            EOF
+            
 
 
             #ATTENDANCE-container
@@ -337,7 +337,7 @@ jobs:
             sudo docker restart attendance
 
             sudo docker image prune -af
-            EOF
+            
 
 
             #PAYROLL-container
@@ -366,7 +366,7 @@ jobs:
             sudo docker restart payroll
 
             sudo docker image prune -af
-            EOF
+            
 
             #GATEWAY-container
 
