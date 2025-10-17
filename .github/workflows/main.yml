@@ -127,7 +127,7 @@ jobs:
           sudo docker rm frontend || true
 
           # Ensure Docker network exists
-          sudo docker network inspect appnet >/dev/null 2>&1 || docker network create appnet
+          sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
           # Run new container without environment variables first
           sudo docker run -d --name frontend -p 5173:5173 --network appnet ${{ secrets.ECR_URL }}:latest
 
