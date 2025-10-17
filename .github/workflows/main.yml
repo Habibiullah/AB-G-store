@@ -149,7 +149,7 @@ jobs:
             # mongo-db deploy
 
 
-  deploy:
+  mongo:
     runs-on: ubuntu-latest
     env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
@@ -213,7 +213,7 @@ jobs:
             
             # -------------Deploy auth --------
 
-  deploy:
+  backend:
       runs-on: ubuntu-latest
       env:
         # Adjust as you wish; these are used on the REMOTE host via heredoc
