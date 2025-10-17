@@ -80,7 +80,7 @@ jobs:
           docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
           docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
 
-  -------------------- DEPLOY TO EC2 --------------------
+  # -------------------- DEPLOY TO EC2 --------------------
 
 
   deploy:
@@ -149,7 +149,7 @@ jobs:
             # mongo-db deploy
 
 
-   deploy:
+  deploy:
     runs-on: ubuntu-latest
     env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
@@ -213,7 +213,7 @@ jobs:
             
             # -------------Deploy auth --------
 
-    deploy:
+  deploy:
       runs-on: ubuntu-latest
       env:
         # Adjust as you wish; these are used on the REMOTE host via heredoc
