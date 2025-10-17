@@ -175,7 +175,6 @@ jobs:
           # Optional: curl your gateway if reachable locally or via a known endpoint
           # curl -fsS http://localhost:8000/healthz || { echo "Gateway health check failed"; exit 1; }
 
-          echo "✅ Deployment completed successfully!"
-          REMOTE_EOF
+          
 
     
