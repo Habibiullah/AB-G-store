@@ -214,8 +214,8 @@ jobs:
             # -------------Deploy auth --------
 
     deploy:
-    runs-on: ubuntu-latest
-    env:
+      runs-on: ubuntu-latest
+      env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
       AWS_REGION: ${{ secrets.AWS_REGION}}
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
