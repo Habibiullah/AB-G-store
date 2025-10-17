@@ -84,60 +84,63 @@ jobs:
 
 
   deploy:
-    runs-on: ubuntu-latest
-    env:
-      # Adjust as you wish; these are used on the REMOTE host via heredoc
-      AWS_REGION: ap-southeast-1
-      AWS_ACCOUNT_ID: 851725361780
+  runs-on: ubuntu-latest
+  env:
+  # Adjust as you wish; these are used on the REMOTE host via heredoc
+  AWS_REGION: ${{ secrets.AWS_REGION}}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
-    steps:
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+  steps:
 
-      - name: Deploy to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          set -x
+  - name: Configure AWS CLI
+  run: |
+  mkdir -p ~/.aws
+  echo "[default]" > ~/.aws/credentials
+  echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+  echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+  echo "[default]" > ~/.aws/config
+  echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
+
+  - name: Set up SSH
+  run: |
+  mkdir -p ~/.ssh
+  echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+  chmod 600 ~/.ssh/id_rsa
+  ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+  - name: Deploy to EC2
+  run: |
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+  set -e
+  set -x
 
 
-         
-
-          # Login to AWS ECR and pull the latest image
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
-          sudo docker pull ${{ secrets.ECR_URL }}:latest
+  # Login to AWS ECR and pull the latest image
+  aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+  sudo docker pull ${{ secrets.ECR_URL }}:latest
 
 
-             
+  #FRONTEND-container
 
-           #vitalsteerstechnologies-container
+  # Stop and remove the existing container if it exists
+  sudo docker stop frontenfd || true
+  sudo docker rm frontend || true
 
-          # Stop and remove the existing container if it exists
-          sudo docker stop vitalsteerstechnologies || true
-          sudo docker rm vitalsteerstechnologies || true
+  # Ensure Docker network exists
+  sudo docker network inspect appnet >/dev/null 2>&1 || docker network create appnet
+  # Run new container without environment variables first
+  sudo docker run -d --name frontend -p 5173:5173 --network appnet ${{ secrets.ECR_URL }}:latest
 
-          # Ensure Docker network exists
-          sudo docker network create vitalsteerstechnologies-network || true
+  # Create environment file inside EC2
+  cat <<EOT > /home/ubuntu/.env
+  VITE_API_URL=${{ secrets.VITE_API_URL }}
+  EOT
 
-          # Run new container without environment variables first
-          sudo docker run -d --name vitalsteerstechnologies -p 3001:3000 --network vitalsteerstechnologies-network ${{ secrets.ECR_URL }}:latest
+  # Copy environment file into the running container
+  sudo docker cp /home/ubuntu/.env frontend:/app/.env
 
-          # Create environment file inside EC2
-          cat <<EOT > /home/ubuntu/app.env
-          NODEMAILER_EMAIL=${{ secrets.NODEMAILER_EMAIL }}
-          NODEMAILER_EMAIL_PASSWORD=${{ secrets.NODEMAILER_EMAIL_PASSWORD }}
-          EOT
+  # Restart the container to load environment variables
+  sudo docker restart frontend
 
-          # Copy environment file into the running container
-          sudo docker cp /home/ubuntu/app.env vitalsteerstechnologies:/app/.env
-
-          # Restart the container to load environment variables
-          sudo docker restart vitalsteerstechnologies
-
-          sudo docker image prune -af
-          EOF
-    
+  sudo docker image prune -af
+  EOF
