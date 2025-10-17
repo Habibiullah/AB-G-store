@@ -91,91 +91,53 @@ jobs:
       AWS_ACCOUNT_ID: 851725361780
 
     steps:
-      - name: Deploy via single SSH session
-        shell: bash
+      - name: Set up SSH
         run: |
-          set -Eeuo pipefail
-
-          # --- Prepare SSH (in this same step) ---
           mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_ci
-          chmod 400 ~/.ssh/id_ci
-          # Strict host key checking with prefetch:
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-          # --- Hardened SSH options ---
-          SSH_USER="${{ secrets.EC2_USER || 'ubuntu' }}"
-          SSH_HOST="${{ secrets.EC2_HOST }}"
-          SSH_OPTS="-o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i ~/.ssh/id_ci -tt"
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          set -x
 
-          echo "🔌 Checking SSH reachability (with retries)..."
-          for i in {1..5}; do
-            if ssh $SSH_OPTS "${SSH_USER}@${SSH_HOST}" 'true' 2>/dev/null; then
-              echo "✅ SSH reachable."
-              break
-            fi
-            echo "SSH attempt $i failed; retrying in 5s..."
-            sleep 5
-            if [[ $i -eq 5 ]]; then
-              echo "❌ Could not reach EC2 via SSH after 5 attempts."
-              exit 1
-            fi
-          done
 
-          # --- Single SSH session runs EVERYTHING below ---
-          ssh $SSH_OPTS "${SSH_USER}@${SSH_HOST}" <<'REMOTE_EOF'
-          set -Eeuo pipefail
-          trap 'echo "❌ Remote deploy failed at line $LINENO"; exit 1' ERR
+         
 
-          echo "✅ Connected to EC2."
+          # Login to AWS ECR and pull the latest image
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+          sudo docker pull ${{ secrets.ECR_URL }}:latest
 
-          # --- Config ---
-          AWS_REGION="${AWS_REGION:-ap-southeast-1}"
-          ACCOUNT_ID="${AWS_ACCOUNT_ID:-851725361780}"
-          ECR_REGISTRY="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-          echo "🔧 Versions:"
-          command -v docker >/dev/null && docker --version || { echo "Docker missing"; exit 1; }
-          command -v aws >/dev/null && aws --version || { echo "AWS CLI missing"; exit 1; }
+             
 
-          echo "🔐 Logging into ECR..."
-          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+           #vitalsteerstechnologies-container
 
-          echo "🧹 Removing old containers (if any)..."
-          docker rm -f frontend auth employees attendance payroll gateway 2>/dev/null || true
+          # Stop and remove the existing container if it exists
+          sudo docker stop vitalsteerstechnologies || true
+          sudo docker rm vitalsteerstechnologies || true
 
-          echo "🕸️ Ensuring Docker network exists..."
-          docker network create appnet 2>/dev/null || true
+          # Ensure Docker network exists
+          sudo docker network create vitalsteerstechnologies-network || true
 
-          echo "⬇️ Pulling latest images..."
-          for service in frontend auth employees attendance payroll gateway; do
-            echo "🔄 Pulling $ECR_REGISTRY/$service:latest ..."
-            # Small retry for pulls
-            for j in 1 2 3; do
-              if docker pull "$ECR_REGISTRY/$service:latest"; then
-                break
-              fi
-              echo "Pull failed for $service (attempt $j). Retrying in 3s..."
-              sleep 3
-              if [[ $j -eq 3 ]]; then
-                echo "❌ Pull failed for $service after 3 attempts."
-                exit 1
-              fi
-            done
-          done
+          # Run new container without environment variables first
+          sudo docker run -d --name vitalsteerstechnologies -p 3001:3000 --network vitalsteerstechnologies-network ${{ secrets.ECR_URL }}:latest
 
-          echo "🚢 Starting containers..."
-          docker run -d --name frontend   --network appnet -p 5173:5173 --restart unless-stopped "$ECR_REGISTRY/frontend:latest"
-          docker run -d --name gateway    --network appnet -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/gateway:latest"
-          for service in auth employees attendance payroll; do
-            docker run -d --name "$service" --network appnet --restart unless-stopped "$ECR_REGISTRY/$service:latest"
-          done
+          # Create environment file inside EC2
+          cat <<EOT > /home/ubuntu/app.env
+          NODEMAILER_EMAIL=${{ secrets.NODEMAILER_EMAIL }}
+          NODEMAILER_EMAIL_PASSWORD=${{ secrets.NODEMAILER_EMAIL_PASSWORD }}
+          EOT
 
-          echo "🧪 Health check (basic):"
-          # Optional: curl your gateway if reachable locally or via a known endpoint
-          # curl -fsS http://localhost:8000/healthz || { echo "Gateway health check failed"; exit 1; }
+          # Copy environment file into the running container
+          sudo docker cp /home/ubuntu/app.env vitalsteerstechnologies:/app/.env
 
-          echo "✅ Deployment completed successfully!"
-          REMOTE_EOF
+          # Restart the container to load environment variables
+          sudo docker restart vitalsteerstechnologies
 
+          sudo docker image prune -af
+          EOF
     
