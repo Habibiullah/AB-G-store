@@ -216,9 +216,9 @@ jobs:
     deploy:
       runs-on: ubuntu-latest
       env:
-      # Adjust as you wish; these are used on the REMOTE host via heredoc
-      AWS_REGION: ${{ secrets.AWS_REGION}}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        # Adjust as you wish; these are used on the REMOTE host via heredoc
+        AWS_REGION: ${{ secrets.AWS_REGION}}
+        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
       steps:
 
