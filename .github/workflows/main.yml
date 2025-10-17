@@ -146,10 +146,74 @@ jobs:
   #         EOF
 
 
-            # mongo-db deploy
+  #           # mongo-db deploy
 
 
-   deploy:
+  #  deploy:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     # Adjust as you wish; these are used on the REMOTE host via heredoc
+  #     AWS_REGION: ${{ secrets.AWS_REGION}}
+  #     AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+  #   steps:
+
+  #     - name: Configure AWS CLI
+  #       run: |
+  #         mkdir -p ~/.aws
+  #         echo "[default]" > ~/.aws/credentials
+  #         echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+  #         echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+  #         echo "[default]" > ~/.aws/config
+  #         echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
+
+  #     - name: Set up SSH
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+  #         chmod 600 ~/.ssh/id_rsa
+  #         ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+  #     - name: Deploy to EC2
+  #       run: |
+  #         ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+  #         set -e
+  #         set -x
+
+
+        
+
+
+  #         #mongodb-container
+
+  #         # Stop and remove the existing container if it exists
+  #         sudo docker stop mongo || true
+  #         sudo docker rm mongo || true
+
+  #         # Ensure Docker volume exists
+  #         sudo mkdir -p /home/ubuntu/mongo-data
+  #         sudo chown -R 999:9000 /home/ubuntu/mongo-data
+
+  #         # Ensure Docker network exists
+  #         sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+  #         # Run new container without environment variables first
+  #         sudo docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=rootpass --network appnet -v /home/ubuntu/mongo-data:/data/db mongo:7
+
+          
+
+          
+
+  #         # Restart the container to load environment variables
+  #         sudo docker restart mongo
+
+  #         sudo docker image prune -af
+  #         EOF
+
+            
+            
+            # -------------Deploy auth --------
+
+    deploy:
     runs-on: ubuntu-latest
     env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
@@ -181,30 +245,35 @@ jobs:
           set -x
 
 
-        
+          # Login to AWS ECR and pull the latest image
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+          sudo docker pull ${{ secrets.ECR_URL }}:latest
 
 
-          #mongodb-container
+          #AUTH-container
 
           # Stop and remove the existing container if it exists
-          sudo docker stop mongo || true
-          sudo docker rm mongo || true
-
-          # Ensure Docker volume exists
-          sudo mkdir -p /home/ubuntu/mongo-data
-          sudo chown -R 999:9000 /home/ubuntu/mongo-data
+          sudo docker stop auth || true
+          sudo docker rm auth || true
 
           # Ensure Docker network exists
           sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
           # Run new container without environment variables first
-          sudo docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=rootpass --network appnet -v /home/ubuntu/mongo-data:/data/db mongo:7
+          sudo docker run -d --name auth -p 4001:4001 --network appnet ${{ secrets.AUTH_ECR_URL }}:latest
 
-          
+          # Create environment file inside EC2
+          cat <<EOT > /home/ubuntu/.env
+          PORT_AUTH=${{ secrets.PORT_AUTH }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
 
-          
+          EOT
+
+          # Copy environment file into the running container
+          sudo docker cp /home/ubuntu/.env auth:/app/.env
 
           # Restart the container to load environment variables
-          sudo docker restart mongo
+          sudo docker restart auth
 
           sudo docker image prune -af
           EOF
