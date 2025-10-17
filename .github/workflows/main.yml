@@ -250,123 +250,123 @@ jobs:
             sudo docker pull ${{ secrets.ECR_URL }}:latest
 
 
-            # #AUTH-container
+            #AUTH-container
 
-            # # Stop and remove the existing container if it exists
-            # sudo docker stop auth || true
-            # sudo docker rm auth || true
+            # Stop and remove the existing container if it exists
+            sudo docker stop auth || true
+            sudo docker rm auth || true
 
-            # # Ensure Docker network exists
-            # sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # # Run new container without environment variables first
-            # sudo docker run -d --name auth -p 4001:4001 --network appnet ${{ secrets.AUTH_ECR_URL }}:latest
+            # Ensure Docker network exists
+            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+            # Run new container without environment variables first
+            sudo docker run -d --name auth -p 4001:4001 --network appnet ${{ secrets.AUTH_ECR_URL }}:latest
 
-            # # Create environment file inside EC2
-            # cat <<EOT > /home/ubuntu/.env
-            # PORT_AUTH=${{ secrets.PORT_AUTH }}
-            # JWT_SECRET=${{ secrets.JWT_SECRET }}
-            # CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            # MONGO_URI=${{ secrets.MONGO_URI }}
+            # Create environment file inside EC2
+            cat <<EOT > /home/ubuntu/.env
+            PORT_AUTH=${{ secrets.PORT_AUTH }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
 
-            # EOT
+            EOT
 
-            # # Copy environment file into the running container
-            # sudo docker cp /home/ubuntu/.env auth:/app/.env
+            # Copy environment file into the running container
+            sudo docker cp /home/ubuntu/.env auth:/app/.env
 
-            # # Restart the container to load environment variables
-            # sudo docker restart auth
+            # Restart the container to load environment variables
+            sudo docker restart auth
 
-            # sudo docker image prune -af
-            # EOF
-
-
+            sudo docker image prune -af
+            EOF
 
 
-            # #Employees-container
-
-            # # Stop and remove the existing container if it exists
-            # sudo docker stop employees || true
-            # sudo docker rm employees || true
-
-            # # Ensure Docker network exists
-            # sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # # Run new container without environment variables first
-            # sudo docker run -d --name employees -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
-
-            # # Create environment file inside EC2
-            # cat <<EOT > /home/ubuntu/.env
-            # PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
-            # CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            # MONGO_URI=${{ secrets.MONGO_URI }}
-
-            # EOT
-
-            # # Copy environment file into the running container
-            # sudo docker cp /home/ubuntu/.env employees:/app/.env
-
-            # # Restart the container to load environment variables
-            # sudo docker restart employees
-
-            # sudo docker image prune -af
-            # EOF
 
 
-            # #ATTENDANCE-container
+            #Employees-container
 
-            # # Stop and remove the existing container if it exists
-            # sudo docker stop attendance || true
-            # sudo docker rm attendance || true
+            # Stop and remove the existing container if it exists
+            sudo docker stop employees || true
+            sudo docker rm employees || true
 
-            # # Ensure Docker network exists
-            # sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # # Run new container without environment variables first
-            # sudo docker run -d --name attendance -p 4003:4003 --network appnet ${{ secrets.ATTENDANCE_ECR_URL }}:latest
+            # Ensure Docker network exists
+            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+            # Run new container without environment variables first
+            sudo docker run -d --name employees -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
 
-            # # Create environment file inside EC2
-            # cat <<EOT > /home/ubuntu/.env
-            # PORT_ATTENDANCE=${{ secrets.PORT_ATTENDANCE }}
-            # CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            # MONGO_URI=${{ secrets.MONGO_URI }}
+            # Create environment file inside EC2
+            cat <<EOT > /home/ubuntu/.env
+            PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
 
-            # EOT
+            EOT
 
-            # # Copy environment file into the running container
-            # sudo docker cp /home/ubuntu/.env attendance:/app/.env
+            # Copy environment file into the running container
+            sudo docker cp /home/ubuntu/.env employees:/app/.env
 
-            # # Restart the container to load environment variables
-            # sudo docker restart attendance
+            # Restart the container to load environment variables
+            sudo docker restart employees
 
-            # sudo docker image prune -af
-            # EOF
+            sudo docker image prune -af
+            EOF
 
 
-            # #PAYROLL-container
+            #ATTENDANCE-container
 
-            # # Stop and remove the existing container if it exists
-            # sudo docker stop payroll || true
-            # sudo docker rm payroll || true
+            # Stop and remove the existing container if it exists
+            sudo docker stop attendance || true
+            sudo docker rm attendance || true
 
-            # # Ensure Docker network exists
-            # sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # # Run new container without environment variables first
-            # sudo docker run -d --name payroll -p 4004:4004 --network appnet ${{ secrets.PAYROLL_ECR_URL }}:latest
+            # Ensure Docker network exists
+            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+            # Run new container without environment variables first
+            sudo docker run -d --name attendance -p 4003:4003 --network appnet ${{ secrets.ATTENDANCE_ECR_URL }}:latest
 
-            # # Create environment file inside EC2
-            # cat <<EOT > /home/ubuntu/.env
-            # PORT_PAYROLL=${{ secrets.PORT_PAYROLL }}
-            # CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            # MONGO_URI=${{ secrets.MONGO_URI }}
+            # Create environment file inside EC2
+            cat <<EOT > /home/ubuntu/.env
+            PORT_ATTENDANCE=${{ secrets.PORT_ATTENDANCE }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
 
-            # EOT
+            EOT
 
-            # # Copy environment file into the running container
-            # sudo docker cp /home/ubuntu/.env payroll:/app/.env
+            # Copy environment file into the running container
+            sudo docker cp /home/ubuntu/.env attendance:/app/.env
 
-            # # Restart the container to load environment variables
-            # sudo docker restart payroll
+            # Restart the container to load environment variables
+            sudo docker restart attendance
 
-            # sudo docker image prune -af
-            # EOF
+            sudo docker image prune -af
+            EOF
+
+
+            #PAYROLL-container
+
+            # Stop and remove the existing container if it exists
+            sudo docker stop payroll || true
+            sudo docker rm payroll || true
+
+            # Ensure Docker network exists
+            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+            # Run new container without environment variables first
+            sudo docker run -d --name payroll -p 4004:4004 --network appnet ${{ secrets.PAYROLL_ECR_URL }}:latest
+
+            # Create environment file inside EC2
+            cat <<EOT > /home/ubuntu/.env
+            PORT_PAYROLL=${{ secrets.PORT_PAYROLL }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+
+            EOT
+
+            # Copy environment file into the running container
+            sudo docker cp /home/ubuntu/.env payroll:/app/.env
+
+            # Restart the container to load environment variables
+            sudo docker restart payroll
+
+            sudo docker image prune -af
+            EOF
 
             #GATEWAY-container
 
