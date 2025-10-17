@@ -266,6 +266,7 @@ jobs:
             PORT_AUTH=${{ secrets.PORT_AUTH }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
 
             EOT
 
@@ -277,3 +278,34 @@ jobs:
 
             sudo docker image prune -af
             EOF
+
+
+
+
+            # #Employees-container
+
+            # # Stop and remove the existing container if it exists
+            # sudo docker stop employees || true
+            # sudo docker rm employees || true
+
+            # # Ensure Docker network exists
+            # sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+            # # Run new container without environment variables first
+            # sudo docker run -d --name auth -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
+
+            # # Create environment file inside EC2
+            # cat <<EOT > /home/ubuntu/.env
+            # PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
+            # CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            # MONGO_URI=${{ secrets.MONGO_URI }}
+
+            # EOT
+
+            # # Copy environment file into the running container
+            # sudo docker cp /home/ubuntu/.env employees:/app/.env
+
+            # # Restart the container to load environment variables
+            # sudo docker restart employees
+
+            # sudo docker image prune -af
+            # EOF
