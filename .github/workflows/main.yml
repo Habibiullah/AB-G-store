@@ -152,7 +152,7 @@ jobs:
 
   mongo:
     runs-on: ubuntu-latest
-    needs: deploy         #depends on deploy
+        #depends on deploy
     env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
       AWS_REGION: ${{ secrets.AWS_REGION}}
