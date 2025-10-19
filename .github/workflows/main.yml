@@ -296,7 +296,7 @@ jobs:
             cat <<EOT > /home/ubuntu/.env
             PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+            EMPLOYEES_MONGO_URI=${{ secrets.EMPLOYEES_MONGO_URI }}
 
             EOT
 
@@ -325,7 +325,7 @@ jobs:
             cat <<EOT > /home/ubuntu/.env
             PORT_ATTENDANCE=${{ secrets.PORT_ATTENDANCE }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+            ATTENDANCE_MONGO_URI=${{ secrets.ATTENDANCE_MONGO_URI }}
 
             EOT
 
@@ -354,7 +354,7 @@ jobs:
             cat <<EOT > /home/ubuntu/.env
             PORT_PAYROLL=${{ secrets.PORT_PAYROLL }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+            PAYROLL_MONGO_URI=${{ secrets.PAYROLL_MONGO_URI }}
 
             EOT
 
@@ -382,6 +382,7 @@ jobs:
             cat <<EOT > /home/ubuntu/.env
             PORT_GATEWAY=${{ secrets.PORT_GATEWAY }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            GATEWAY_MONGO_URI=${{ secrets.GATEWAY_MONGO_URI}}
             AUTH_URL=${{ secrets.AUTH_URL }}
             EMPLOYEES_URL=${{ secrets.EMPLOYEES_URL }}
             ATTENDANCE_URL=${{ secrets.ATTENDANCE_URL }}
