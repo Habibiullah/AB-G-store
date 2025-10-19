@@ -187,8 +187,9 @@ jobs:
 
           # Ensure Docker volume exists
           sudo mkdir -p /home/ubuntu/mongo-data
+          sudo chmod -R 7000 /home/ubuntu/mongo-data 
           sudo chown -R 999:9000 /home/ubuntu/mongo-data
-          sudo chmod -R 7000 /home/ubuntu/mongo-data
+          
           sudo docker volume create mongo-data
           sudo docker volume inspect mongo-data >/dev/null 2>&1 || sudo docker volume create mongo-data 
 
