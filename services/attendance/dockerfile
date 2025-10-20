@@ -1,5 +1,5 @@
 # Use Node 20 or above (required by @hrms/shared)
-FROM node
+FROM node:20
 
 # Set working directory
 WORKDIR /app
