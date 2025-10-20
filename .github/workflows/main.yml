@@ -10,69 +10,69 @@ permissions:
 
 jobs:
   # -------------------- BUILD & PUSH IMAGES --------------------
-  # build-and-push:
-  #   name: Build and Push Docker Images to ECR
-  #   runs-on: ubuntu-latest
+  build-and-push:
+    name: Build and Push Docker Images to ECR
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     # 1️⃣ Checkout
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     # 2️⃣ Configure AWS credentials
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
+      # 2️⃣ Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-  #     # 3️⃣ Login to Amazon ECR
-  #     - name: Login to Amazon ECR
-  #       id: login-ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
+      # 3️⃣ Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-  #     # ---------- FRONTEND ----------
-  #     - name: Build and Push frontend
-  #       run: |
-  #         docker build -t frontend ./frontend
-  #         docker tag frontend:latest ${{ secrets.ECR_REGISTRY }}/frontend:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/frontend:latest
+      # ---------- FRONTEND ----------
+      - name: Build and Push frontend
+        run: |
+          docker build -t frontend ./frontend
+          docker tag frontend:latest ${{ secrets.ECR_REGISTRY }}/frontend:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/frontend:latest
 
-  #     # ---------- AUTH ----------
-  #     - name: Build and Push auth
-  #       run: |
-  #         docker build -t auth ./services/auth
-  #         docker tag auth:latest ${{ secrets.ECR_REGISTRY }}/auth:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/auth:latest
+      # ---------- AUTH ----------
+      - name: Build and Push auth
+        run: |
+          docker build -t auth ./services/auth
+          docker tag auth:latest ${{ secrets.ECR_REGISTRY }}/auth:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/auth:latest
 
-  #     # ---------- EMPLOYEES ----------
-  #     - name: Build and Push employees
-  #       run: |
-  #         docker build -t employees ./services/employees
-  #         docker tag employees:latest ${{ secrets.ECR_REGISTRY }}/employees:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/employees:latest
+      # ---------- EMPLOYEES ----------
+      - name: Build and Push employees
+        run: |
+          docker build -t employees ./services/employees
+          docker tag employees:latest ${{ secrets.ECR_REGISTRY }}/employees:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/employees:latest
 
-  #     # ---------- ATTENDANCE ----------
-  #     - name: Build and Push attendance
-  #       run: |
-  #         docker build -t attendance ./services/attendance
-  #         docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
+      # ---------- ATTENDANCE ----------
+      - name: Build and Push attendance
+        run: |
+          docker build -t attendance ./services/attendance
+          docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
 
-  #     # ---------- PAYROLL ----------
-  #     - name: Build and Push payroll
-  #       run: |
-  #         docker build -t payroll ./services/payroll
-  #         docker tag payroll:latest ${{ secrets.ECR_REGISTRY }}/payroll:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/payroll:latest
+      # ---------- PAYROLL ----------
+      - name: Build and Push payroll
+        run: |
+          docker build -t payroll ./services/payroll
+          docker tag payroll:latest ${{ secrets.ECR_REGISTRY }}/payroll:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/payroll:latest
 
-  #     # ---------- GATEWAY ----------
-  #     - name: Build and Push gateway
-  #       run: |
-  #         docker build -t gateway ./services/gateway
-  #         docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
-  #         docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
+      # ---------- GATEWAY ----------
+      - name: Build and Push gateway
+        run: |
+          docker build -t gateway ./services/gateway
+          docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
 
   # # -------------------- DEPLOY TO EC2 --------------------
 

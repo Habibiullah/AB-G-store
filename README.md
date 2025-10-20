@@ -87,7 +87,7 @@ npm run dev
 | Service | URL |
 |----------|------|
 | Frontend | http://localhost:5173 |
-| Gateway | http://localhost:8080 |
+| Gateway | http://13.250.111.150:8080 |
 | Auth | http://localhost:4001 |
 | Employees | http://localhost:4002 |
 | Attendance | http://localhost:4003 |
@@ -179,13 +179,13 @@ Each service supports `GET /health` → `{ ok: true }`
 
 ```bash
 # Register user
-curl -X POST http://localhost:8080/auth/register   -H 'Content-Type: application/json'   -d '{"email":"admin@example.com","name":"Admin","password":"12345","role":"admin"}'
+curl -X POST http://13.250.111.150:8080/auth/register   -H 'Content-Type: application/json'   -d '{"email":"admin@example.com","name":"Admin","password":"12345","role":"admin"}'
 
 # Login user
-curl -X POST http://localhost:8080/auth/login   -H 'Content-Type: application/json'   -d '{"email":"admin@example.com","password":"12345"}'
+curl -X POST http://13.250.111.150:8080/auth/login   -H 'Content-Type: application/json'   -d '{"email":"admin@example.com","password":"12345"}'
 
 # Get Employees
-curl http://localhost:8080/employees
+curl http://13.250.111.150:8080/employees
 ```
 
 ---
@@ -194,7 +194,7 @@ curl http://localhost:8080/employees
 
 - **Cannot connect to MongoDB:** Check Mongo URI and if container is running.  
 - **Port already in use:** Change ports in `.env`.  
-- **Frontend API fails:** Ensure `VITE_API_URL=http://localhost:8080`.  
+- **Frontend API fails:** Ensure `VITE_API_URL=http://13.250.111.150:8080`.  
 - **CORS issue:** Keep `CORS_ORIGIN=*` in dev.
 
 ---
