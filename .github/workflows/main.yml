@@ -179,15 +179,20 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -Eeuo pipefail
+          set -e
+          set -x
 
 
           # Ensure Docker volume exists
+          sudo mkdir -p /home/ubuntu/mongo-data
+          sudo chown -R 999:999 /home/ubuntu/mongo-data
+          sudo chmod -R 700 /home/ubuntu/mongo-data
           
-          sudo docker volume create mongo-data >/dev/null 2>&1 || true 
+          # Create Docker named volume (if not already exists)
+          sudo docker volume inspect mongo-data >/dev/null 2>&1 || sudo docker volume create mongo-data 
 
           # Ensure Docker network exists
-          sudo docker network create appnet 2>/dev/null || true
+          sudo docker network create appnet 2>/dev/null || true                                                                                   
           # Run new container without environment variables first
           sudo docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=rootpass --network appnet -v /home/ubuntu/mongo-data:/data/db mongo:7
 
