@@ -5,7 +5,6 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import "dotenv/config";
 
 const PORT = Number(process.env.PORT_GATEWAY) || 8080;
-const ORIGIN = process.env.CORS_ORIGIN || "*";
 
 const targets = {
   auth: process.env.AUTH_URL || "http://localhost:4001",
@@ -15,7 +14,12 @@ const targets = {
 };
 
 const app = express();
-app.use(cors({ origin: ORIGIN }));
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(morgan("dev"));
 
 // Re-stream JSON body if body-parser already consumed it

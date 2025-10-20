@@ -7,7 +7,12 @@ import routes from "./routes.js";
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: env.corsOrigin }));
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(morgan("dev"));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
