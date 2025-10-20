@@ -152,6 +152,7 @@ jobs:
 
   mongo:
     runs-on: ubuntu-latest
+    needs: build-and-push
         #depends on deploy
     env:
       # Adjust as you wish; these are used on the REMOTE host via heredoc
