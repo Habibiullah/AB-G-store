@@ -287,7 +287,7 @@ jobs:
             # Ensure Docker network exists
             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
             # Run new container without environment variables first
-            sudo docker run -d --name employees -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
+            sudo docker run -d --name employees -p 8080:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
 
             # Create environment file inside EC2
             cat <<EOT > /home/ubuntu/.env
