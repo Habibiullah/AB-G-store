@@ -1,393 +1,393 @@
-name: AB-G-store
+# name: AB-G-store
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
-permissions:
-  contents: read
-  id-token: write
+# permissions:
+#   contents: read
+#   id-token: write
 
-jobs:
-  # -------------------- BUILD & PUSH IMAGES --------------------
-  build-and-push:
-    name: Build and Push Docker Images to ECR
-    runs-on: ubuntu-latest
+# jobs:
+#   # -------------------- BUILD & PUSH IMAGES --------------------
+#   build-and-push:
+#     name: Build and Push Docker Images to ECR
+#     runs-on: ubuntu-latest
 
-    steps:
-      # 1️⃣ Checkout
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       # 1️⃣ Checkout
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      # 2️⃣ Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+#       # 2️⃣ Configure AWS credentials
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 3️⃣ Login to Amazon ECR
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+#       # 3️⃣ Login to Amazon ECR
+#       - name: Login to Amazon ECR
+#         id: login-ecr
+#         uses: aws-actions/amazon-ecr-login@v2
 
-      # ---------- FRONTEND ----------
-      - name: Build and Push frontend
-        run: |
-          docker build -t frontend ./frontend
-          docker tag frontend:latest ${{ secrets.ECR_REGISTRY }}/frontend:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/frontend:latest
+#       # ---------- FRONTEND ----------
+#       - name: Build and Push frontend
+#         run: |
+#           docker build -t frontend ./frontend
+#           docker tag frontend:latest ${{ secrets.ECR_REGISTRY }}/frontend:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/frontend:latest
 
-      # ---------- AUTH ----------
-      - name: Build and Push auth
-        run: |
-          docker build -t auth ./services/auth
-          docker tag auth:latest ${{ secrets.ECR_REGISTRY }}/auth:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/auth:latest
+#       # ---------- AUTH ----------
+#       - name: Build and Push auth
+#         run: |
+#           docker build -t auth ./services/auth
+#           docker tag auth:latest ${{ secrets.ECR_REGISTRY }}/auth:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/auth:latest
 
-      # ---------- EMPLOYEES ----------
-      - name: Build and Push employees
-        run: |
-          docker build -t employees ./services/employees
-          docker tag employees:latest ${{ secrets.ECR_REGISTRY }}/employees:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/employees:latest
+#       # ---------- EMPLOYEES ----------
+#       - name: Build and Push employees
+#         run: |
+#           docker build -t employees ./services/employees
+#           docker tag employees:latest ${{ secrets.ECR_REGISTRY }}/employees:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/employees:latest
 
-      # ---------- ATTENDANCE ----------
-      - name: Build and Push attendance
-        run: |
-          docker build -t attendance ./services/attendance
-          docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
+#       # ---------- ATTENDANCE ----------
+#       - name: Build and Push attendance
+#         run: |
+#           docker build -t attendance ./services/attendance
+#           docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
 
-      # ---------- PAYROLL ----------
-      - name: Build and Push payroll
-        run: |
-          docker build -t payroll ./services/payroll
-          docker tag payroll:latest ${{ secrets.ECR_REGISTRY }}/payroll:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/payroll:latest
+#       # ---------- PAYROLL ----------
+#       - name: Build and Push payroll
+#         run: |
+#           docker build -t payroll ./services/payroll
+#           docker tag payroll:latest ${{ secrets.ECR_REGISTRY }}/payroll:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/payroll:latest
 
-      # ---------- GATEWAY ----------
-      - name: Build and Push gateway
-        run: |
-          docker build -t gateway ./services/gateway
-          docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
+#       # ---------- GATEWAY ----------
+#       - name: Build and Push gateway
+#         run: |
+#           docker build -t gateway ./services/gateway
+#           docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
+#           docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest
 
-  # # -------------------- DEPLOY TO EC2 --------------------
-
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-           #depends on mongo
-    env:
-      # Adjust as you wish; these are used on the REMOTE host via heredoc
-      AWS_REGION: ${{ secrets.AWS_REGION}}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-
-    steps:
-
-      - name: Configure AWS CLI
-        run: |
-          mkdir -p ~/.aws
-          echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-          echo "[default]" > ~/.aws/config
-          echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
-
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          set -x
+#   # # -------------------- DEPLOY TO EC2 --------------------
 
 
-          # Login to AWS ECR and pull the latest image
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
-          sudo docker pull ${{ secrets.ECR_URL }}:latest
+#   deploy:
+#     runs-on: ubuntu-latest
+#     needs: build-and-push
+#            #depends on mongo
+#     env:
+#       # Adjust as you wish; these are used on the REMOTE host via heredoc
+#       AWS_REGION: ${{ secrets.AWS_REGION}}
+#       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+#     steps:
+
+#       - name: Configure AWS CLI
+#         run: |
+#           mkdir -p ~/.aws
+#           echo "[default]" > ~/.aws/credentials
+#           echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+#           echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+#           echo "[default]" > ~/.aws/config
+#           echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
+
+#       - name: Set up SSH
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+#       - name: Deploy to EC2
+#         run: |
+#           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+#           set -e
+#           set -x
 
 
-          #FRONTEND-container
-
-          # Stop and remove the existing container if it exists
-          sudo docker stop frontend || true
-          sudo docker rm frontend || true
-
-          # Ensure Docker network exists
-          sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-          # Run new container without environment variables first
-          sudo docker run -d --name frontend -p 5173:5173 --network appnet ${{ secrets.ECR_URL }}:latest
-
-          # Create environment file inside EC2
-          cat <<EOT > /home/ubuntu/.env
-          VITE_API_URL=${{ secrets.VITE_API_URL }}
-          EOT
-
-          # Copy environment file into the running container
-          sudo docker cp /home/ubuntu/.env frontend:/app/.env
-
-          # Restart the container to load environment variables
-          sudo docker restart frontend
-
-          sudo docker image prune -af
-          EOF
+#           # Login to AWS ECR and pull the latest image
+#           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+#           sudo docker pull ${{ secrets.ECR_URL }}:latest
 
 
-            # mongo-db deploy
+#           #FRONTEND-container
+
+#           # Stop and remove the existing container if it exists
+#           sudo docker stop frontend || true
+#           sudo docker rm frontend || true
+
+#           # Ensure Docker network exists
+#           sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#           # Run new container without environment variables first
+#           sudo docker run -d --name frontend -p 5173:5173 --network appnet ${{ secrets.ECR_URL }}:latest
+
+#           # Create environment file inside EC2
+#           cat <<EOT > /home/ubuntu/.env
+#           VITE_API_URL=${{ secrets.VITE_API_URL }}
+#           EOT
+
+#           # Copy environment file into the running container
+#           sudo docker cp /home/ubuntu/.env frontend:/app/.env
+
+#           # Restart the container to load environment variables
+#           sudo docker restart frontend
+
+#           sudo docker image prune -af
+#           EOF
 
 
-  mongo:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-        #depends on deploy
-    env:
-      # Adjust as you wish; these are used on the REMOTE host via heredoc
-      AWS_REGION: ${{ secrets.AWS_REGION}}
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-
-    steps:
-
-      - name: Configure AWS CLI
-        run: |
-          mkdir -p ~/.aws
-          echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-          echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-          echo "[default]" > ~/.aws/config
-          echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
-
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          set -x
+#             # mongo-db deploy
 
 
-          # Ensure Docker volume exists
-          sudo mkdir -p /home/ubuntu/mongo-data
-          sudo chown -R 999:999 /home/ubuntu/mongo-data
-          sudo chmod -R 700 /home/ubuntu/mongo-data
+#   mongo:
+#     runs-on: ubuntu-latest
+#     needs: build-and-push
+#         #depends on deploy
+#     env:
+#       # Adjust as you wish; these are used on the REMOTE host via heredoc
+#       AWS_REGION: ${{ secrets.AWS_REGION}}
+#       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+#     steps:
+
+#       - name: Configure AWS CLI
+#         run: |
+#           mkdir -p ~/.aws
+#           echo "[default]" > ~/.aws/credentials
+#           echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+#           echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+#           echo "[default]" > ~/.aws/config
+#           echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
+
+#       - name: Set up SSH
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+#       - name: Deploy to EC2
+#         run: |
+#           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+#           set -e
+#           set -x
+
+
+#           # Ensure Docker volume exists
+#           sudo mkdir -p /home/ubuntu/mongo-data
+#           sudo chown -R 999:999 /home/ubuntu/mongo-data
+#           sudo chmod -R 700 /home/ubuntu/mongo-data
           
-          # Create Docker named volume (if not already exists)
-          sudo docker volume inspect mongo-data >/dev/null 2>&1 || sudo docker volume create mongo-data 
+#           # Create Docker named volume (if not already exists)
+#           sudo docker volume inspect mongo-data >/dev/null 2>&1 || sudo docker volume create mongo-data 
 
-          # Ensure Docker network exists
-          sudo docker network create appnet 2>/dev/null || true                                                                                   
-          # Run new container without environment variables first
-          sudo docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=rootpass --network appnet -v /home/ubuntu/mongo-data:/data/db mongo:7
+#           # Ensure Docker network exists
+#           sudo docker network create appnet 2>/dev/null || true                                                                                   
+#           # Run new container without environment variables first
+#           sudo docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=rootpass --network appnet -v /home/ubuntu/mongo-data:/data/db mongo:7
 
                     
 
-          # Restart the container to load environment variables
-          sudo docker restart mongo
+#           # Restart the container to load environment variables
+#           sudo docker restart mongo
 
-          sudo docker image prune -af
-          EOF
+#           sudo docker image prune -af
+#           EOF
 
             
             
-            # -------------Deploy auth --------
+#             # -------------Deploy auth --------
 
-  backend:
-      runs-on: ubuntu-latest
-      needs: mongo       #depends on mongo 
-      env:
-        # Adjust as you wish; these are used on the REMOTE host via heredoc
-        AWS_REGION: ${{ secrets.AWS_REGION}}
-        AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+#   backend:
+#       runs-on: ubuntu-latest
+#       needs: mongo       #depends on mongo 
+#       env:
+#         # Adjust as you wish; these are used on the REMOTE host via heredoc
+#         AWS_REGION: ${{ secrets.AWS_REGION}}
+#         AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
-      steps:
+#       steps:
 
-        - name: Configure AWS CLI
-          run: |
-            mkdir -p ~/.aws
-            echo "[default]" > ~/.aws/credentials
-            echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
-            echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
-            echo "[default]" > ~/.aws/config
-            echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
+#         - name: Configure AWS CLI
+#           run: |
+#             mkdir -p ~/.aws
+#             echo "[default]" > ~/.aws/credentials
+#             echo "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+#             echo "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+#             echo "[default]" > ~/.aws/config
+#             echo "region=${{ secrets.AWS_REGION }}" >> ~/.aws/config
 
-        - name: Set up SSH
-          run: |
-            mkdir -p ~/.ssh
-            echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+#         - name: Set up SSH
+#           run: |
+#             mkdir -p ~/.ssh
+#             echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+#             chmod 600 ~/.ssh/id_rsa
+#             ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-        - name: Deploy to EC2
-          run: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            set -x
-
-
-            # Login to AWS ECR and pull the latest image
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
-            sudo docker pull ${{ secrets.ECR_URL }}:latest
+#         - name: Deploy to EC2
+#           run: |
+#             ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+#             set -e
+#             set -x
 
 
-            #AUTH-container
+#             # Login to AWS ECR and pull the latest image
+#             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+#             sudo docker pull ${{ secrets.ECR_URL }}:latest
 
-            # Stop and remove the existing container if it exists
-            sudo docker stop auth || true
-            sudo docker rm auth || true
 
-            # Ensure Docker network exists
-            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # Run new container without environment variables first
-            sudo docker run -d --name auth -p 4001:4001 --network appnet ${{ secrets.AUTH_ECR_URL }}:latest
+#             #AUTH-container
 
-            # Create environment file inside EC2
-            cat <<EOT > /home/ubuntu/.env
-            PORT_AUTH=${{ secrets.PORT_AUTH }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+#             # Stop and remove the existing container if it exists
+#             sudo docker stop auth || true
+#             sudo docker rm auth || true
 
-            EOT
+#             # Ensure Docker network exists
+#             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#             # Run new container without environment variables first
+#             sudo docker run -d --name auth -p 4001:4001 --network appnet ${{ secrets.AUTH_ECR_URL }}:latest
 
-            # Copy environment file into the running container
-            sudo docker cp /home/ubuntu/.env auth:/app/.env
+#             # Create environment file inside EC2
+#             cat <<EOT > /home/ubuntu/.env
+#             PORT_AUTH=${{ secrets.PORT_AUTH }}
+#             JWT_SECRET=${{ secrets.JWT_SECRET }}
+#             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+#             MONGO_URI=${{ secrets.MONGO_URI }}
 
-            # Restart the container to load environment variables
-            sudo docker restart auth
+#             EOT
 
-            sudo docker image prune -af
+#             # Copy environment file into the running container
+#             sudo docker cp /home/ubuntu/.env auth:/app/.env
+
+#             # Restart the container to load environment variables
+#             sudo docker restart auth
+
+#             sudo docker image prune -af
           
 
 
 
 
-            #Employees-container
+#             #Employees-container
 
-            # Stop and remove the existing container if it exists
-            sudo docker stop employees || true
-            sudo docker rm employees || true
+#             # Stop and remove the existing container if it exists
+#             sudo docker stop employees || true
+#             sudo docker rm employees || true
 
-            # Ensure Docker network exists
-            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # Run new container without environment variables first
-            sudo docker run -d --name employees -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
+#             # Ensure Docker network exists
+#             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#             # Run new container without environment variables first
+#             sudo docker run -d --name employees -p 4002:4002 --network appnet ${{ secrets.EMPLOYEES_ECR_URL }}:latest
 
-            # Create environment file inside EC2
-            cat <<EOT > /home/ubuntu/.env
-            PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+#             # Create environment file inside EC2
+#             cat <<EOT > /home/ubuntu/.env
+#             PORT_EMPLOYEES=${{ secrets.PORT_EMPLOYEES }}
+#             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+#             MONGO_URI=${{ secrets.MONGO_URI }}
 
-            EOT
+#             EOT
 
-            # Copy environment file into the running container
-            sudo docker cp /home/ubuntu/.env employees:/app/.env
+#             # Copy environment file into the running container
+#             sudo docker cp /home/ubuntu/.env employees:/app/.env
 
-            # Restart the container to load environment variables
-            sudo docker restart employees
+#             # Restart the container to load environment variables
+#             sudo docker restart employees
 
-            sudo docker image prune -af
+#             sudo docker image prune -af
             
 
 
-            #ATTENDANCE-container
+#             #ATTENDANCE-container
 
-            # Stop and remove the existing container if it exists
-            sudo docker stop attendance || true
-            sudo docker rm attendance || true
+#             # Stop and remove the existing container if it exists
+#             sudo docker stop attendance || true
+#             sudo docker rm attendance || true
 
-            # Ensure Docker network exists
-            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # Run new container without environment variables first
-            sudo docker run -d --name attendance -p 4003:4003 --network appnet ${{ secrets.ATTENDANCE_ECR_URL }}:latest
+#             # Ensure Docker network exists
+#             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#             # Run new container without environment variables first
+#             sudo docker run -d --name attendance -p 4003:4003 --network appnet ${{ secrets.ATTENDANCE_ECR_URL }}:latest
 
-            # Create environment file inside EC2
-            cat <<EOT > /home/ubuntu/.env
-            PORT_ATTENDANCE=${{ secrets.PORT_ATTENDANCE }}
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+#             # Create environment file inside EC2
+#             cat <<EOT > /home/ubuntu/.env
+#             PORT_ATTENDANCE=${{ secrets.PORT_ATTENDANCE }}
+#             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+#             MONGO_URI=${{ secrets.MONGO_URI }}
 
-            EOT
+#             EOT
 
-            # Copy environment file into the running container
-            sudo docker cp /home/ubuntu/.env attendance:/app/.env
+#             # Copy environment file into the running container
+#             sudo docker cp /home/ubuntu/.env attendance:/app/.env
 
-            # Restart the container to load environment variables
-            sudo docker restart attendance
+#             # Restart the container to load environment variables
+#             sudo docker restart attendance
 
-            sudo docker image prune -af
+#             sudo docker image prune -af
             
 
 
-            #PAYROLL-container
+#             #PAYROLL-container
 
-            # Stop and remove the existing container if it exists
-            sudo docker stop payroll || true
-            sudo docker rm payroll || true
+#             # Stop and remove the existing container if it exists
+#             sudo docker stop payroll || true
+#             sudo docker rm payroll || true
 
-            # Ensure Docker network exists
-            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # Run new container without environment variables first
-            sudo docker run -d --name payroll -p 4004:4004 --network appnet ${{ secrets.PAYROLL_ECR_URL }}:latest
+#             # Ensure Docker network exists
+#             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#             # Run new container without environment variables first
+#             sudo docker run -d --name payroll -p 4004:4004 --network appnet ${{ secrets.PAYROLL_ECR_URL }}:latest
 
-            # Create environment file inside EC2
-            cat <<EOT > /home/ubuntu/.env
-            PORT_PAYROLL=${{ secrets.PORT_PAYROLL }}
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
+#             # Create environment file inside EC2
+#             cat <<EOT > /home/ubuntu/.env
+#             PORT_PAYROLL=${{ secrets.PORT_PAYROLL }}
+#             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+#             MONGO_URI=${{ secrets.MONGO_URI }}
 
-            EOT
+#             EOT
 
-            # Copy environment file into the running container
-            sudo docker cp /home/ubuntu/.env payroll:/app/.env
+#             # Copy environment file into the running container
+#             sudo docker cp /home/ubuntu/.env payroll:/app/.env
 
-            # Restart the container to load environment variables
-            sudo docker restart payroll
+#             # Restart the container to load environment variables
+#             sudo docker restart payroll
 
-            sudo docker image prune -af
+#             sudo docker image prune -af
             
 
-            #GATEWAY-container
+#             #GATEWAY-container
 
-            # Stop and remove the existing container if it exists
-            sudo docker stop gateway || true
-            sudo docker rm gateway || true
+#             # Stop and remove the existing container if it exists
+#             sudo docker stop gateway || true
+#             sudo docker rm gateway || true
 
-            # Ensure Docker network exists
-            sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
-            # Run new container without environment variables first
-            sudo docker run -d --name gateway -p 8080:8080 --network appnet ${{ secrets.GATEWAY_ECR_URL }}:latest
+#             # Ensure Docker network exists
+#             sudo docker network inspect appnet >/dev/null 2>&1 || sudo docker network create appnet
+#             # Run new container without environment variables first
+#             sudo docker run -d --name gateway -p 8080:8080 --network appnet ${{ secrets.GATEWAY_ECR_URL }}:latest
 
-            # Create environment file inside EC2
-            cat <<EOT > /home/ubuntu/.env
-            PORT_GATEWAY=${{ secrets.PORT_GATEWAY }}
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            GATEWAY_MONGO_URI=${{ secrets.GATEWAY_MONGO_URI}}
-            AUTH_URL=${{ secrets.AUTH_URL }}
-            EMPLOYEES_URL=${{ secrets.EMPLOYEES_URL }}
-            ATTENDANCE_URL=${{ secrets.ATTENDANCE_URL }}
-            PAYROLL_URL=${{ secrets.PAYROLL_URL }}
+#             # Create environment file inside EC2
+#             cat <<EOT > /home/ubuntu/.env
+#             PORT_GATEWAY=${{ secrets.PORT_GATEWAY }}
+#             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+#             GATEWAY_MONGO_URI=${{ secrets.GATEWAY_MONGO_URI}}
+#             AUTH_URL=${{ secrets.AUTH_URL }}
+#             EMPLOYEES_URL=${{ secrets.EMPLOYEES_URL }}
+#             ATTENDANCE_URL=${{ secrets.ATTENDANCE_URL }}
+#             PAYROLL_URL=${{ secrets.PAYROLL_URL }}
 
-            EOT
+#             EOT
 
-            # Copy environment file into the running container
-            sudo docker cp /home/ubuntu/.env gateway:/app/.env
+#             # Copy environment file into the running container
+#             sudo docker cp /home/ubuntu/.env gateway:/app/.env
 
-            # Restart the container to load environment variables
-            sudo docker restart gateway
+#             # Restart the container to load environment variables
+#             sudo docker restart gateway
 
-            sudo docker image prune -af
-            EOF
+#             sudo docker image prune -af
+#             EOF
