@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
   id-token: write
-  
+
 jobs:
           #---------image build and push-----------
   build-push:
@@ -21,7 +21,7 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws_access_key_id: ${{ services.AWS_ACCESS_KEY_ID }}
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
                    #------------------Login to Amazon ECR-------------
