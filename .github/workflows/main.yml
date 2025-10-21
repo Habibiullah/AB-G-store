@@ -1,9 +1,12 @@
 name: AB-G-store
 on:
-  push: [main]
+  push: 
+    branches: [main]
+
 permissions:
-contents: read
-id-token: write
+  contents: read
+  id-token: write
+  
 jobs:
           #---------image build and push-----------
   build-push:
@@ -52,7 +55,7 @@ jobs:
         run: |
           docker build -t attendance ./attendance
           docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
+          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latestAAp-southeast-1p-southeast-1
 
                    #------------------------------payroll image build and push -------------------
       - name: Build and push payroll
