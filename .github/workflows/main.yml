@@ -39,37 +39,37 @@ jobs:
 
       - name: Build and push auth
         run: |
-          docker build -t auth ./auth
+          docker build -t auth ./services/auth
           docker tag auth:latest ${{ secrets.ECR_REGISTRY }}/auth:latest
           docker push ${{ secrets.ECR_REGISTRY }}/auth:latest
           
                   #------------------------- employees image build and push-------------
       - name: Build and push employees
         run: |
-          docker build -t employees ./employees
+          docker build -t employees ./services/employees
           docker tag employees:latest ${{ secrets.ECR_REGISTRY }}/employees:latest
           docker push ${{ secrets.ECR_REGISTRY }}/employees:latest
          
                         #---------------------------- attendance image build and push--------------
       - name: Build and push attendance
         run: |
-          docker build -t attendance ./attendance
+          docker build -t attendance ./services/attendance
           docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
           docker push ${{ secrets.ECR_REGISTRY }}/attendance:latestAAp-southeast-1p-southeast-1
 
                    #------------------------------payroll image build and push -------------------
       - name: Build and push payroll
         run: |
-          docker build -t payroll ./payroll
+          docker build -t payroll ./services/payroll
           docker tag payroll:latest ${{ secrets.ECR_REGISTRY }}/payroll:latest
           docker push ${{ secrets.ECR_REGISTRY }}/payroll:latest   
                      #-----------------------------  gateway image build and push---------------------
       - name: Build and push gateway
         run: |
-          docker build -t gateway ./gateway
+          docker build -t gateway ./services/gateway
           docker tag gateway:latest ${{ secrets.ECR_REGISTRY }}/gateway:latest
           docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest                   
-
+#-----------------------------------------------deploy to ec2------------------
 
 
 
