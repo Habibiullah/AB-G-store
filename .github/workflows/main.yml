@@ -71,6 +71,6 @@ jobs:
           docker push ${{ secrets.ECR_REGISTRY }}/gateway:latest                   
 #-----------------------------------------------deploy to ec2------------------
 
-
+#---------------------------------------pull and deploy--------------
 
 
