@@ -55,7 +55,7 @@ jobs:
         run: |
           docker build -t attendance ./services/attendance
           docker tag attendance:latest ${{ secrets.ECR_REGISTRY }}/attendance:latest
-          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latestAAp-southeast-1p-southeast-1
+          docker push ${{ secrets.ECR_REGISTRY }}/attendance:latest
 
                    #------------------------------payroll image build and push -------------------
       - name: Build and push payroll
